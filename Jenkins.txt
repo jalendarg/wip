@@ -1,0 +1,27 @@
+pipeline {
+    agent any
+    environment {
+        AWS_DEFAULT_REGION="us-west-2"
+        THE_BUTLER_SAYS_SO=credentials('jenkinsDivaSystemUser')
+     }
+    stages {
+    stage('Build') {
+        steps {
+            echo 'Build World'
+            sh ''' 
+                python3 --version
+                TEST=`pwd`
+                echo $TEST
+                ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" 2> /dev/null
+                brew install jq
+                _authenticationOutput=`cat $HOME/aws_cred/.awstoken`
+			    export AWS_ACCESS_KEY_ID=`echo ${_authenticationOutput} | jq -r '.Credentials.AccessKeyId'`
+			    export AWS_SECRET_ACCESS_KEY=`echo ${_authenticationOutput} | jq -r '.Credentials.SecretAccessKey'`
+			    export AWS_SESSION_TOKEN=`echo ${_authenticationOutput} | jq -r '.Credentials.SessionToken'`
+                /usr/local/bin/aws --version
+                /usr/local/bin/aws ec2 describe-instances
+            '''
+        }
+    }   
+}
+}
